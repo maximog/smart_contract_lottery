@@ -1,0 +1,38 @@
+from brownie import network, config, Lottery, Contract
+import pytest
+from scripts.helpful_scripts import (
+    LOCAL_BLOCKCHAIN_ENVIRONMENTS,
+    get_account,
+    get_contract,
+    fund_with_link,
+)
+from scripts.deploy_lottery import deploy_lottery
+import time
+
+
+def test_can_pick_winner():
+    if network.show_active() in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
+        pytest.skip()
+    lottery = deploy_lottery()
+    account = get_account()
+    lottery.startLottery({"from": account})
+    lottery.enter({"from": account, "value": lottery.getEntranceFee() + 1e8})
+    lottery.enter({"from": account, "value": lottery.getEntranceFee() + 1e8})
+    fund_with_link(lottery)
+    lottery.endLottery({"from": account})
+    time.sleep(60)
+    assert lottery.recentWinner() == account
+    assert lottery.balance() == 0
+
+
+# def test_try_something():
+#     if network.show_active() in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
+#         pytest.skip()
+#     account = get_account()
+
+#     lottery = Contract.from_abi(
+#         Lottery._name, "0x699c31b47F1fF89Ac6D924643Bed1c4d8f467e4c", Lottery.abi
+#     )
+#     winner = lottery.recentWinner()
+#     print(f"winner is {winner}")
+#     assert lottery.recentWinner() == account
